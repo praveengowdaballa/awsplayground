@@ -1,0 +1,476 @@
+#Please check a script regarding Linux Hardening, it may help you to configure your system
+
+#######################################################
+#!/bin/bash
+
+#####LInux Hardening Script#####
+
+#######################################################
+
+# #
+
+# Files involved in this script are as follow: #
+
+# /etc/ssh/ssh_config #
+
+# /etc/init.d/functions #
+
+# /boot/grub/grub.conf #
+
+# /etc/vsftpd/ftpusers #
+
+# /etc/securetty #
+
+# /etc/issue #
+
+# /etc/motd #
+
+# /etc/passwd #
+
+# /etc/ssh/sshd_config #
+
+#######################################################
+
+HOSTNAME=`hostname`
+
+HARD_LOG=”/var/log/`hostname`_hard_log”
+
+echo “HOSTNAME:”$HOSTNAME >>${HARD_LOG}
+
+date ‘+DATE: %m/%d/%y%nTIME:%H:%M:%S’ >>${HARD_LOG}
+
+echo -n “Please Enter Your Name: ”
+
+read NAME
+
+echo “Unix Administrator:” $NAME >>${HARD_LOG}
+
+echo “Please Enter Project Name: ”
+
+read PROJECT
+
+echo “Project Name:” $PROJECT >>${HARD_LOG}
+
+echo “Please Enter the name of Owner/SPOC for the server: ”
+
+read OWNER
+
+echo “Owner/SPOC:” $OWNER >>${HARD_LOG}
+
+echo “Please wait…..Hardening is in progess”
+
+echo ” Creating Directory Called /etc/BackupSystemFiles for Backup of critical files and files copying are in progress” >> ${HARD_LOG}
+
+mkdir /etc/BackupSystemFiles
+
+cd /
+
+tar -cvf /etc/BackupSystemFiles/etc.tar etc &>/dev/null
+
+sleep 10
+
+echo “Files have been copied to /etc/BackupSystemFiles ” >>${HARD_LOG}
+
+echo “/etc/passwd,/etc/securetty,/etc/vsftpd/ftpusers,/boot/grub/grub.conf,/etc/init.d/functions,/etc/ssh/ssh_config & /etc/ssh/sshd_config files will be modified during the script execution” >>${HARD_LOG}
+
+######Banner#####
+
+echo “Updating the banner in /etc/issue.net file” >> ${HARD_LOG}
+
+echo “********************************************************************************” >/etc/issue.net
+
+echo “* *”>>/etc/issue.net
+
+echo “* ATTENTION! PLEASE READ CAREFULLY. *”>>/etc/issue.net
+
+echo “* *”>>/etc/issue.net
+
+echo “* This system is the property of xyz. It is for authorized use only. *”>>/etc/issue.net
+
+echo “* Users (authorized and unauthorized) have no explicit or implicit expectation *”>>/etc/issue.net
+
+echo “* of privacy. Any or all uses of this system and all files on the this system *”>>/etc/issue.net
+
+echo “* will be intercepted, monitored, recorded, copied, audited, inspected, and *”>>/etc/issue.net
+
+echo “* disclosed to xyz management, and law enforcement personnel as *”>>/etc/issue.net
+
+echo “* well as other authorized agencies. By using this system, the user consents *”>>/etc/issue.net
+
+echo “* to such interception,monitoring, recording, copying, auditing, inspection, *”>>/etc/issue.net
+
+echo “* and disclosure at the discretion of xyz. Unauthorized or improper *”>>/etc/issue.net
+
+echo “* use of this system may result in administrative disciplinary action and civil*”>>/etc/issue.net
+
+echo “* and criminal penalties. By continuing to use this system you indicate the *”>>/etc/issue.net
+
+echo “* awareness of and consent to these terms and conditions of use. LOG OFF *”>>/etc/issue.net
+
+echo “* IMMEDIATELY if you do not agree to the terms and conditions stated in this *”>>/etc/issue.net
+
+echo “* warning. *”>>/etc/issue.net
+
+echo “* *”>>/etc/issue.net
+
+echo “********************************************************************************”>>/etc/issue.net
+
+#######motd#######
+
+echo “Updating the banner in /etc/motd file” >> ${HARD_LOG}
+
+echo “********************************************************************************” >/etc/motd>> ${HARD_LOG}
+
+echo “* *”>>/etc/motd>> ${HARD_LOG}
+
+echo “* ATTENTION! PLEASE READ CAREFULLY. *”>>/etc/motd>> ${HARD_LOG}
+
+echo “* *”>>/etc/motd>> ${HARD_LOG}
+
+echo “* This system is the property of xyz. It is for authorized use only. *”>>/etc/motd>> ${HARD_LOG}
+
+echo “* Users (authorized and unauthorized) have no explicit or implicit expectation *”>>/etc/motd>> ${HARD_LOG}
+
+echo “* of privacy. Any or all uses of this system and all files on the this system *”>>/etc/motd>> ${HARD_LOG}
+
+echo “* will be intercepted, monitored, recorded, copied, audited, inspected, and *”>>/etc/motd>> ${HARD_LOG}
+
+echo “* disclosed to xyz, and law enforcement personnel as *”>>/etc/motd>> ${HARD_LOG}
+
+echo “* well as other authorized agencies. By using this system, the user consents *”>>/etc/motd>> ${HARD_LOG}
+
+echo “* to such interception,monitoring, recording, copying, auditing, inspection, *”>>/etc/motd>> ${HARD_LOG}
+
+echo “* and disclosure at the discretion of xyz. Unauthorized or improper *”>>/etc/motd>> ${HARD_LOG}
+
+echo “* use of this system may result in administrative disciplinary action and civil*”>>/etc/motd>> ${HARD_LOG}
+
+echo “* and criminal penalties. By continuing to use this system you indicate the *”>>/etc/motd>> ${HARD_LOG}
+
+echo “* awareness of and consent to these terms and conditions of use. LOG OFF *”>>/etc/motd>> ${HARD_LOG}
+
+echo “* IMMEDIATELY if you do not agree to the terms and conditions stated in this *”>>/etc/motd>> ${HARD_LOG}
+
+echo “* warning. *”>>/etc/motd>> ${HARD_LOG}
+
+echo “* *”>>/etc/motd>> ${HARD_LOG}
+
+echo “********************************************************************************”>>/etc/motd>> ${HARD_LOG}
+
+echo “Above Banner is updated in the System ” >> ${HARD_LOG}
+
+######Set Password Expiry Time for users#########
+
+echo “Setting Password Expiry Time for users …” >> ${HARD_LOG}
+
+cd /etc/
+
+cp login.defs /etc/BackupSystemFiles/login.defs.prehard
+
+sed -e ‘s/99999/30/g’ login.defs > login.defs1
+
+cp login.defs login.defs.before
+
+mv login.defs1 login.defs
+
+sed -e ‘s/PASS_MIN_LEN 5/PASS_MIN_LEN 8/g’ login.defs > login.defs1
+
+cp login.defs login.defs.before
+
+mv login.defs1 login.defs
+
+echo “********************************************************************************”>> ${HARD_LOG}
+
+#####ssh configuration######
+
+echo “Configuring SSH service” >>${HARD_LOG}
+
+cd /etc/ssh
+
+cp -p ssh_config /etc/BackupSystemFiles/ssh_config.prehard
+
+cp -p sshd_config /etc/BackupSystemFiles/sshd_config.prehard
+
+sed -e ‘s/#PermitRootLogin yes/PermitRootLogin no/g’ sshd_config >>sshd_config1
+
+cp -p sshd_config sshd_config.before
+
+mv sshd_config1 sshd_config
+
+sed -e ‘s/#HostbasedAuthentication no/HostbasedAuthentication no/g’ sshd_config >>sshd_config1
+
+cp -p sshd_config sshd_config.before
+
+mv sshd_config1 sshd_config
+
+sed -e ‘s/#RhostsRSAAuthentication no/RhostsRSAAuthentication no/g’ sshd_config >>sshd_config1
+
+cp -p sshd_config sshd_config.before
+
+mv sshd_config1 sshd_config
+
+sed -e ‘s/#IgnoreRhosts yes/IgnoreRhosts yes/g’ sshd_config >>sshd_config1
+
+cp -p sshd_config sshd_config.before
+
+mv sshd_config1 sshd_config
+
+sed -e ‘s/#PermitEmptyPasswords no/PermitEmptyPasswords no/g’ sshd_config >>sshd_config1
+
+cp -p sshd_config sshd_config.before
+
+mv sshd_config1 sshd_config
+
+echo “Banner /etc/issue.net” >>sshd_config
+
+echo “********************************************************************************”>> ${HARD_LOG}
+
+######Set Daemon Umask######
+
+cd /etc/init.d
+
+cp -p functions /etc/BackupSystemFiles/functions.prehard
+
+# edit the line with umask
+
+sed -e ‘s/umask 022/umask 027/g’ functions >>functions1
+
+cp -p functions functions.before
+
+mv functions1 functions
+
+######Stop Uneccessary Services#######
+
+echo “Stoping Unneccessary Services” >> ${HARD_LOG}
+
+for FILE in apmd canna dhcdbd FreeWnn gpm hpoj innd irda isdn kdcrotate lvs mars-nwe oki4daemon privoxy rstatd rusersd rwalld rwhod spamassassin wine
+
+do
+
+service $FILE stop &>/dev/null
+
+chkconfig –list $FILE &>/dev/null 1>>/etc/BackupSystemFiles/boot.service.prehard
+
+chkconfig $FILE off &>/dev/null
+
+done
+
+for FILE in nfs nfslock autofs ypbind ypserv yppasswdd \
+
+portmap smb netfs lpd apache httpd tux snmpd \
+
+named postgresql vsftpd mysqld webmin kudzu squid cups \
+
+ip6tables iptables pcmcia bluetooth mDNSResponder
+
+do
+
+service $FILE stop &>/dev/null
+
+chkconfig –list $FILE &>/dev/null 1>>/etc/BackupSystemFiles/boot.service.prehard
+
+chkconfig $FILE off &>/dev/null
+
+done
+
+echo “********************************************************************************”>> ${HARD_LOG}
+
+######Disable network services######
+
+echo “Disabling unnecessary Network Services now.”>> ${HARD_LOG}
+
+mkdir /etc/BackupSystemFiles/xinetd.d >> ${HARD_LOG}
+
+cp -rf /etc/xinetd.d/* /etc/BackupSystemFiles/xinetd.d/ >> ${HARD_LOG}
+
+cd /etc/xinetd.d >> ${HARD_LOG}
+
+for FILE in chargen chargen-udp cups-lpd cups daytime \
+
+daytime-udp echo echo-udp eklogin finger imap \
+
+imaps ipop2 ipop3 klogin kshell ktalk ntalk \
+
+pop3s rexec rsync servers services sgi_fam \
+
+talk tftp time time-udp
+
+do
+
+chkconfig –list ${FILE} &>/dev/null 1>> /etc/BackupSystemFiles/standard.service.prehard
+
+chkconfig ${FILE} off &>/dev/null
+
+done
+
+echo “********************************************************************************”>> ${HARD_LOG}
+
+#######Lock the Unneccessary Accounts########
+
+echo “Locking the Uneccessary Accounts”>>${HARD_LOG}
+
+cp -p /etc/passwd /etc/BackupSystemFiles/passwd.prehard
+
+for USERID in rpc rpcuser lp apache http httpd named dns \
+
+mysql postgres squid news netdump
+
+do
+
+usermod -L -s /sbin/nologin $USERID &>/dev/null
+
+done
+
+echo “********************************************************************************”>> ${HARD_LOG}
+
+#######Confirm Permissions On System Log files######
+
+cd /var/log
+
+ls -l > /etc/BackupSystemFiles/system.logfiles
+
+chmod o-rwx boot.log* cron* dmesg ksyms* httpd/* maillog* messages* news/* pgsql rpmpkgs* samba/* sa/* scrollkeeper.log secure* spooler* squid/* vbox/* wtmp &>/dev/null
+
+chmod o-rx boot.log* cron* maillog* messages* pgsql secure* spooler* squid/* sa/* &>/dev/null
+
+chmod g-w boot.log* cron* dmesg httpd/* ksyms* maillog* messages* pgsql rpmpkgs* samba/* sa/* scrollkeeper.log secure* spooler* &>/dev/null
+
+chmod g-rx boot.log* cron* maillog* messages* pgsql secure* spooler* &>/dev/null
+
+chmod o-w gdm/ httpd/ news/ samba/ squid/ sa/ vbox/ &>/dev/null
+
+chmod o-rx httpd/ samba/ squid/ sa/ &>/dev/null
+
+chmod g-w gdm/ httpd/ news/ samba/ squid/ sa/ vbox/ &>/dev/null
+
+chmod g-rx httpd/ samba/ sa/ &>/dev/null
+
+chmod u-x kernel syslog loginlog &>/dev/null
+
+chown -R root:root . &>/dev/null
+
+chgrp utmp wtmp &>/dev/null
+
+[ -e news ] && chown -R news:news news &>/dev/null
+
+[ -e pgsql ] && chown postgres:postgres pgsql &>/dev/null
+
+chown -R squid:squid squid &>/dev/null
+
+######Verify passwd, shadow and group file permissions#######
+
+cd /etc
+
+ls -l > /etc/BackupSystemFiles/etc.files
+
+chown root:root passwd shadow group
+
+chmod 644 passwd group
+
+chmod 400 shadow
+
+cp -p /etc/vsftpd/ftpusers /etc/BackupSystemFiles/ftpusers.prehard
+
+for NAME in `cut -d: -f1 /etc/passwd`; do
+
+if [ `id -u $NAME` -lt 500 ]; then
+
+echo $NAME >> /etc/ftpusers
+
+fi
+
+done
+
+chown root:root /etc/vsftpd/ftpusers
+
+chmod 600 /etc/vsftpd/ftpusers
+
+#########Banner For FTP###################
+
+cd /etc/vsftpd
+
+cp -p vsftpd.conf /etc/BackupSystemFiles/vsftpd.conf.prehard
+
+echo “ftpd_banner=Authorized users only. All activity \
+
+may be monitored and reported.” >> vsftpd.conf
+
+######Protect Grub With Password#######
+
+cp -p /boot/grub/grub.conf /etc/BackupSystemFiles/grub.conf.prehard
+
+sed -i ‘1ipassword password’ /boot/grub/grub.conf
+
+chown root:root /etc/grub.conf
+
+chmod 600 /etc/grub.conf
+
+#######Restrict Root Logins To System Console By adding the entry called console in the file /etc/securetty#######
+
+echo “Restricting root Logins to the System Console By adding the entry called console in the file /etc/securetty” >> ${HARD_LOG}
+
+cp -p /etc/securetty /etc/BackupSystemFiles/securetty.prehard
+
+for i in `seq 1 6`; do
+
+echo tty$i >> /etc/securetty
+
+done
+
+for i in `seq 1 11`; do
+
+echo vc/$i >> /etc/securetty
+
+done
+
+echo console >> /etc/securetty
+
+chown root:root /etc/securetty
+
+chmod 400 /etc/securetty
+
+#######Block System Accounts#######
+
+cp -p /etc/passwd /etc/BackupSystemFiles/passwd.prehard
+
+for NAME in `cut -d: -f1 /etc/passwd`;
+
+do
+
+MyUID=`id -u $NAME`
+
+if [ $MyUID -lt 500 -a $NAME != ‘root’ ]; then
+
+usermod -L -s /sbin/nologin $NAME
+
+fi
+
+done
+
+######Verify that no UID 0 Account exists Other than root######
+
+echo “********************************************************************************”>> ${HARD_LOG}
+
+awk -F: ‘($3 == 0) { print “UID 0 Accounts are Below. Please do block if its not neccessary\n” $1 }’ /etc/passwd>> ${HARD_LOG}
+
+echo “********************************************************************************”>> ${HARD_LOG}
+
+######Setting Password expiry (must expire after 42 days and warn 7 days) for root account#######
+
+echo “Setting Password expiry (must expire after 30 days and warn 7 days) for root account” >> ${HARD_LOG}
+
+passwd -x 30 -w 7 root >> ${HARD_LOG}
+
+echo “All the activities are done by this script has been logged into $HARD_LOG”
+
+echo “Request you to save the log file in the SharePoint portal URL http://sinbngpp001/TIM/UNIXServerReports/Forms/AllItems.aspx for the Audit”
+
+echo “#———————————————————————#”
+
+echo
+
+echo ” END OF THE SCRIPT ”
+
+echo
+
+echo “#———————————————————————#”

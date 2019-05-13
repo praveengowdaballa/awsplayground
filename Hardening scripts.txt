@@ -1,0 +1,109 @@
+#!/bin/bash
+chkconfig autofs off
+chkconfig avahi-daemon off
+chkconfig avahi-dnsconfd off
+chkconfig bluetooth off
+chkconfig conman off
+chkconfig cups off
+chkconfig dhcdbd off
+chkconfig firstboot off
+chkconfig gpm off
+chkconfig haldaemon off
+chkconfig isdn off
+chkconfig iptables off
+chkconfig ip6tables off
+chkconfig irda off
+chkconfig irqbalance off
+chkconfig kdump off
+chkconfig kudzu off
+chkconfig mcstrans off
+chkconfig microcode_ctl off
+chkconfig multipathd off
+chkconfig netconsole off
+chkconfig netfs off
+chkconfig netplugd off
+chkconfig nfs off
+chkconfig nfslock off
+chkconfig nscd off
+chkconfig pcscd off
+chkconfig portmap off
+chkconfig rdisc off
+chkconfig rhnsd off
+chkconfig restorecond off
+chkconfig rpcgssd off
+chkconfig rpcidmapd off
+chkconfig rpcsvcgssd off
+chkconfig sendmail off
+chkconfig smartd off
+chkconfig winbind off
+chkconfig wpa_supplicant off
+chkconfig xfs off
+chkconfig ypbind off
+chkconfig yum-updatesd off
+chkconfig acpid on
+chkconfig anacron on
+chkconfig atd on
+chkconfig cpuspeed on
+chkconfig lvm2-monitor on
+chkconfig messagebus on
+chkconfig ntpd on
+chkconfig network on
+chkconfig oracle on
+chkconfig oracleasm on
+chkconfig readahead_early on
+chkconfig readahead_later on
+chkconfig syslog on
+chkconfig sshd on
+cat > /root/banner << EOF
+|-----------------------------------------------------------------|
+| This system is for the use of authorized users only. |
+| Individuals using this computer system without authority, or in |
+| excess of their authority, are subject to having all of their |
+| activities on this system monitored and recorded by system |
+| personnel. |
+| |
+| In the course of monitoring individuals improperly using this |
+| system, or in the course of system maintenance, the activities |
+| of authorized users may also be monitored. |
+| |
+| Anyone using this system expressly consents to such monitoring |
+| and is advised that if such monitoring reveals possible |
+| evidence of criminal activity, system personnel may provide the |
+| evidence of such monitoring to law enforcement officials. |
+|-----------------------------------------------------------------|
+EOF
+cat /root/banner
+sed -i 's/id:5:initdefault:/id:3:initdefault:/g' /etc/inittab
+sed -i 's/ca::ctrlaltdel:/#ca::ctrlaltdel:/g' /etc/inittab
+echo PermitRootLogin no >> /etc/ssh/sshd_config
+echo Banner /root/banner >> /etc/ssh/sshd_config
+sed -i 's/#AllowTcpForwarding yes/AllowTcpForwarding no/g' /etc/ssh/sshd_config
+sed -i 's/#X11Forwarding no/X11Forwarding no/g' /etc/ssh/sshd_config
+sed -i 's/X11Forwarding yes/#X11Forwarding yes/g' /etc/ssh/sshd_config
+sed -i 's/#StrictModes yes/StrictModes yes/g' /etc/ssh/sshd_config
+sed -i 's/#IgnoreRhosts yes/IgnoreRhosts yes/g' /etc/ssh/sshd_config
+sed -i 's/#HostbasedAuthentication no/HostbasedAuthentication no/g' /etc/ssh/sshd_config
+sed -i 's/#RhostsRSAAuthentication no/RhostsRSAAuthentication no/g' /etc/ssh/sshd_config
+service sshd restart
+echo net.ipv4.conf.all.accept_source_route = 0 >> /etc/sysctl.conf
+echo net.ipv4.conf.all.accept_redirects = 0 >> /etc/sysctl.conf
+echo net.ipv4.icmp_echo_ignore_broadcasts = 1 >> /etc/sysctl.conf
+echo net.ipv4.icmp_ignore_bogus_error_responses = 1 >> /etc/sysctl.conf
+echo net.ipv4.conf.all.log_martians = 1 >> /etc/sysctl.conf
+sysctl -p
+if [ $(id -u) -eq 0 ]; then
+read -p "Enter username : " username
+read -s -p "Enter password : " password
+egrep "^$username" /etc/passwd >/dev/null
+if [ $? -eq 0 ]; then
+echo "$username exists!"
+exit 1
+else
+pass=$(perl -e 'print crypt($ARGV[0], "password")' $password)
+useradd -m -p $pass $username
+[ $? -eq 0 ] && echo "User has been added to system!" || echo "Failed to add a user!"
+fi
+else
+echo "Only root may add a user to the system"
+exit 2
+fi
