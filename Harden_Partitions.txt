@@ -1,0 +1,48 @@
+pvcreate /dev/sdb
+vgcreate root-vg /dev/sdb
+lvcreate -L 10G root-vg -n lv_var
+lvcreate -L 5G root-vg -n lv_var_log
+lvcreate -L 5G root-vg -n lv_var_log_audit
+lvcreate -L 2G root-vg -n lv_home
+lvcreate -L 5G root-vg -n lv_tmp
+mkfs.xfs /dev/root-vg/lv_home
+mkfs.xfs /dev/root-vg/lv_tmp
+mkfs.xfs /dev/root-vg/lv_var
+mkfs.xfs /dev/root-vg/lv_var_log
+mkfs.xfs /dev/root-vg/lv_var_log_audit
+
+
+Add below entries in to /etc/fstab
+
+/dev/mapper/root--vg-lv_home    /home   xfs defaults,nodev 0 0
+/dev/mapper/root--vg-lv_tmp     /tmp    xfs defaults,nodev,nosuid 0 0
+/dev/mapper/root--vg-lv_var   /var      xfs defaults 0 0
+/dev/mapper/root--vg-lv_var_log /var/log        xfs defaults 0 0
+/dev/mapper/root--vg-lv_var_log_audit /var/log/audit    xfs defaults 0 0
+/tmp /var/tmp none bind 0 0
+
+
+
+mount /dev/mapper/root--vg-lv_var /test
+cp -avrp /var/* /test
+umount /test
+mount /dev/mapper/root--vg-lv_var_log /test
+cp -avrp /var/log/* /test
+umount /test
+-------------------------------------------------
+ubuntu doesnt come with audit services so we need to install it 
+sudo apt install -y auditd audispd-plugins
+-------------------------------------------
+mount /dev/mapper/root--vg-lv_var_log_audit /test
+cp -avrp /var/log/audit/* /test
+umount /test
+mount /dev/mapper/root--vg-lv_tmp /test
+cp -avrp /tmp/ /test
+umount /test
+mount /dev/mapper/root--vg-lv_home /test
+cp -avrp /home/* /test
+umount /test
+mount -a
+
+
+centos7_harden_instance
