@@ -1,0 +1,145 @@
+{
+	"variables": {
+		"ami_id": "{{env `AMI_ID_NEW`}}",
+		"ssh_user": "{{ env `SSH_USER_NEW`}}",
+		"ami_name" : "{{ env `AMI_NAME`}}",
+		"region" : "{{env `REGION_NAME`}}",
+		"instance_type" : "{{env `INSTANCE_TYPE`}}",
+
+		"aws_access_key_id" : "", 
+		"aws_secret_access_key" : "",
+		"aws_session_token" : ""
+	},
+
+	"builders": [
+		{
+			"type": "amazon-ebs",
+			"region": "{{user `region`}}",
+			"source_ami": "{{ user `ami_id`  }}",
+			"instance_type": "{{user `instance_type`}}",
+			"ssh_username": "{{ user `ssh_user` }}",
+			"ami_name": "{{user `ami_name`}}",
+			"ami_description": "{{user `ami_name`}}",
+			"encrypt_boot": true,
+                        "ami_regions": [ "us-west-2" ],
+                        "kms_key_id": "d9cfd63a-9c73-4286-b549-967ffce6b220",
+                        "region_kms_key_ids": {
+                        "us-west-2": "d9cfd63a-9c73-4286-b549-967ffce6b220"
+                                              },
+			"access_key": "{{user `aws_access_key_id`}}",
+			"secret_key": "{{user `aws_secret_access_key`}}",
+			"token": "{{ user `aws_session_token`}}",
+			"ssh_pty" : true,
+			"tags": {
+				"Name": "{{user `ami_name`}}"
+				},
+
+
+			"launch_block_device_mappings": [
+                                {
+                                 "device_name": "/dev/sda1",
+                                 "delete_on_termination": "true",
+                                 "volume_size": 35,
+                                 "volume_type": "standard"
+                                },
+
+                                {
+                                  "device_name": "/dev/xvdd",
+                                  "volume_size": 40,
+                                  "volume_type": "gp2",
+                                  "delete_on_termination": true
+                                }
+
+			  ]
+			
+
+		}
+	],
+
+	"provisioners": [
+
+		{
+				"type" : "file",
+				"source": "Install_Ansible.sh",
+				"destination": "/home/centos/Install_Ansible.sh"
+		},
+
+		{
+				"type": "shell",
+				"remote_folder": "/home/centos",
+				"inline": [ "sudo bash /home/centos/Install_Ansible.sh" ]
+		},
+		
+		
+		{
+				"type": "file",
+  				"source": "SELinuxScript.sh",
+  				"destination": "/home/centos/SELinuxScript.sh"
+		},
+
+		{
+				"type": "ansible-local",
+				"playbook_file": "./harden-instance_nvme.yml",
+				"extra_arguments": ["-vvv"]
+		},
+
+		{
+				"type": "ansible-local",
+				"playbook_file": "./AfterMount.yml",
+				"extra_arguments": ["-vvv"]
+		},
+
+
+		{
+				"type": "shell",
+				"remote_folder": "/home/centos",
+				"inline": ["sudo lsblk", "df -h"]
+		},
+		{
+                                "type": "ansible-local",
+                                "playbook_file": "./EventLog.yml",
+                                "extra_arguments": ["-vvv"]
+                },
+		{
+				"type": "file",
+				"source": "bootstrap_kernal_upgrade.sh",
+				"destination": "/home/centos/bootstrap_kernal_upgrade.sh"
+		},
+		{
+				"type": "shell",
+				"remote_folder": "/home/centos",
+				"inline": [ "sudo bash /home/centos/bootstrap_kernal_upgrade.sh"  ]
+		},
+		{
+                                "type": "file",
+                                "source": "Centos-CCoE-Hardeningscript.sh",
+                                "destination": "/home/centos/Centos-CCoE-Hardeningscript.sh"
+                },
+                {
+                                "type": "shell",
+                                "remote_folder": "/home/centos",
+                                "inline": ["sudo bash /home/centos/Centos-CCoE-Hardeningscript.sh"]
+
+                },
+
+                {
+                                "type": "file",
+                                "source": "McAfee_Agent_install.sh",
+                                "destination": "/home/centos/McAfee_Agent_install.sh"
+                },
+                {
+                                "type": "shell",
+                                "remote_folder": "/home/centos",
+                                "inline": ["sudo bash /home/centos/McAfee_Agent_install.sh"]
+
+                }
+
+
+
+		
+		
+	
+		
+	]
+}
+

@@ -1,0 +1,182 @@
+---
+
+- hosts: localhost
+  gather_facts: no
+  become: yes
+  become_method: sudo
+ 
+  tasks:
+    - name: "Partitioning 1st number in /dev/xvdd /tmp file system"
+      parted: 
+        device: /dev/xvdd
+        number: 1
+        state: present
+        part_start: 0MB
+        part_end: 5120MB
+        
+    - name: "Partitioning /dev/xvdd2 for /home file system "
+      parted: 
+        device: /dev/xvdd
+        number: 2
+        state: present
+        part_start: 5120MB
+        part_end: 7680MB
+
+    - name: "Partitioning 3rd number in /dev/xvdd /var/log/audit filesystem"
+      parted: 
+        device: /dev/xvdd
+        number: 3
+        state: present
+        part_start: 7680MB
+        part_end: 9728MB
+
+
+    - name: "Creating Extened partitioning"
+      parted:
+        device: /dev/xvdd
+        number: 4
+        state: present
+        part_type: extended
+        part_start: 9728MB
+        part_end: 100%
+
+
+    - name: "Partitioning 5th number in /dev/xvdd /var filesystem"
+      parted:
+        device: /dev/xvdd
+        number: 5
+        state: present
+        part_type: logical
+        part_start: 9728MB
+        part_end: 14848MB
+
+    - name: "Creating /var/log partition"
+      parted:
+        device: /dev/xvdd
+        number: 6
+        state: present
+        part_type: logical
+        part_start: 14848MB
+        part_end: 19968MB
+
+    - name: "Creating SWAP partition"
+      parted:
+        device: /dev/xvdd
+        number: 7
+        state: present
+        part_type: logical
+        part_start: 19968MB
+        part_end: 24064MB
+
+    - name: "Formating /dev/xvdd1"
+      filesystem:
+        dev: /dev/xvdd1
+        fstype: ext4
+
+    - name: "Formating /dev/xvdd2"
+      filesystem:
+        dev: /dev/xvdd2
+        fstype: ext4
+
+    - name: "Formating /dev/xvdd3"
+      filesystem:
+        dev: /dev/xvdd3
+        fstype: ext4
+
+    - name: "Formating /dev/xvdd5"
+      filesystem:
+        dev: /dev/xvdd5
+        fstype: ext4
+    
+    - name: "Formating /dev/xvdd6"
+      filesystem:
+        dev: /dev/xvdd6
+        fstype: ext4
+
+
+    - name: "Backing up and Mounting new filesystem"
+      shell: |
+        sudo mkdir /temphome
+        sudo mkdir /tempvarlogaudit
+        sudo mkdir /tempvar
+        sudo mkdir /tempvarlog
+        sudo mount /dev/xvdd2 /temphome
+        sudo mount /dev/xvdd3 /tempvarlogaudit
+        sudo mount /dev/xvdd5 /tempvar
+        sudo mount /dev/xvdd6 /tempvarlog
+        sudo rsync -aqxP /home/* /temphome
+        sudo rsync -aqxP /var/log/audit/* /tempvarlogaudit
+        sudo rsync -aqxP /var/* /tempvar
+        sudo rsync -aqxP /var/log/* /tempvarlog
+        sudo umount /dev/xvdd2
+        sudo umount /dev/xvdd3
+        sudo umount /dev/xvdd5
+        sudo umount /dev/xvdd6
+        echo "sudo mount -a" >> /etc/rc.local
+        sudo yum -y remove polkit*
+        sudo mkswap /dev/xvdd7
+        sudo swapon /dev/xvdd7 
+
+    - name: "Mouting /tmp file system"   
+      mount: 
+        src: /dev/xvdd1
+        path: /tmp
+        fstype: ext4
+        opts: auto,nodev,noexec,nosuid
+        state: present
+        fstab: /etc/fstab 
+
+    - name: "Mouting /home file system"    
+      mount: 
+        src: /dev/xvdd2
+        path: /home
+        fstype: ext4
+        opts: auto,nodev
+        state: present
+        fstab: /etc/fstab
+
+    - name: "Mouting /var/log file system"
+      mount:
+        src: /dev/xvdd6
+        path: /var/log
+        fstype: ext4
+        opts: auto,nodev
+        state: present
+        fstab: /etc/fstab
+
+    
+    - name: "Mouting /var/log/audit file system"
+      mount: 
+        src: /dev/xvdd3
+        path: /var/log/audit
+        fstype: ext4
+        state: present
+        fstab: /etc/fstab
+
+    - name: "Mouting /var file system"
+      mount:
+        src: /dev/xvdd5
+        path: /var
+        fstype: ext4
+        state: present
+        fstab: /etc/fstab
+
+
+    - name: "Changing mouting option to  /dev/shm file system"
+      mount:
+        fstype: tmpfs
+        name: "/dev/shm"
+        opts: "defaults,nodev,nosuid,noexec"
+        path: /dev/shm
+        src: tmpfs
+        state: mounted
+
+    - name: "Adding SWAP Entry in fstab"
+      lineinfile: 
+        path: /etc/fstab
+        state: present
+        line: '/dev/xvdd7    swap    swap    defaults   0 0'
+
+
+    - name: "fstab entry"
+      command: sudo cat /etc/fstab

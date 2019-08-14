@@ -1,0 +1,35 @@
+---
+
+- hosts: localhost
+  gather_facts: no
+  become: yes
+  become_method: sudo
+
+  tasks:
+    - file:
+        path: /etc/modprobe.d/blacklist.conf
+        state: touch
+        mode: 644
+
+    - name: "Adding removable filesystem in blacklist /etc/modprobe.d/blacklist.conf"
+      lineinfile:
+        path: /etc/modprobe.d/blacklist.conf
+        line: "{{ item }}"
+      with_items:
+        - blacklist cramfs
+        - blacklist freevxfs
+        - blacklist jffs2
+        - blacklist hfs
+        - blacklist hfsplus
+        - blacklist squashfs
+        - blacklist udf
+        - blacklist vfat
+        - blacklist dccp
+        - blacklist sctp
+        - blacklist rds
+        - blacklist tipc
+
+
+    - name: "Running Script to Enable SELinux in Kernel & remove SETrobleshoot"
+      script:
+        /home/centos/SELinuxScript.sh

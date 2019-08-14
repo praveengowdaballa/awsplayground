@@ -1,0 +1,175 @@
+---
+
+- hosts: localhost
+  gather_facts: no
+  become: yes
+  become_method: sudo
+
+  tasks:
+    - name: "Create PV of 40GB from /dev/xvdd and Create rootvg from /dev/vdd"
+      lvg:
+        vg: rootvg
+        pvs: /dev/xvdd
+
+    - name: "Create /tmp - LV for 10 GB from rootvg"
+      lvol:
+        vg: rootvg
+        lv: tmp
+        size: 5G
+
+    - name: "Create /var/log/audit - LV for 2 GB from rootvg"
+      lvol:
+        vg: rootvg
+        lv: varlogaudit
+        size: 5G
+
+    - name: "Create /home - LV for 5 GB from rootvg"
+      lvol:
+        vg: rootvg
+        lv: home
+        size: 5G
+
+    - name: "Create /var/log - LV for 5 GB from rootvg"
+      lvol:
+        vg: rootvg
+        lv: varlog
+        size: 5G
+
+    - name: "Create SWAP - LV for 2 GB from rootvg"
+      lvol:
+        vg: rootvg
+        lv: swap
+        size: 4G
+
+    - name: "Create SWAP - LV for 5 GB from rootvg"
+      lvol:
+        vg: rootvg
+        lv: var
+        size: 5G
+
+    - name: "Formating /dev/rootvg/tmp - 10GB"
+      filesystem:
+        fstype: xfs
+        dev: /dev/rootvg/tmp
+
+    - name: "Formating /dev/rootvg/var - varGB"
+      filesystem:
+        fstype: xfs
+        dev: /dev/rootvg/var
+
+    - name: "Formating /dev/rootvg/varlogaudit/ for 2 GB"
+      filesystem:
+        fstype: xfs
+        dev: /dev/rootvg/varlogaudit
+
+    - name: "Formating /dev/rootvg/home for 5 GB"
+      filesystem:
+        fstype: xfs
+        dev: /dev/rootvg/home
+
+    - name: "Formating /dev/rootvg/varlog for 5GB"
+      filesystem:
+        fstype: xfs
+        dev: /dev/rootvg/varlog
+
+    - name: "Formating /dev/rootvg/swap for 8GB"
+      filesystem:
+        fstype: xfs
+        dev: /dev/rootvg/swap
+
+
+    - name: "Backing up and Mounting new filesystem"
+      shell: |
+        sudo mkdir /temphome
+        sudo mkdir /tempvarlogaudit
+        sudo mkdir /tempvarlog
+        sudo mkdir /tempvar
+        sudo swapoff -a
+        sudo mount /dev/rootvg/home /temphome
+        sudo mount /dev/rootvg/var  /tempvar
+        sudo mount /dev/rootvg/varlogaudit /tempvarlogaudit
+        sudo mount /dev/rootvg/varlog /tempvarlog
+        sudo rsync -aqxP /home/* /temphome
+        sudo rsync -aqxP /var/log/audit/* /tempvarlogaudit
+        sudo rsync -aqxP /var/* /tempvar
+        sudo rsync -aqxP /var/log/* /tempvarlog
+        sudo umount /dev/rootvg/home
+        sudo umount /dev/rootvg/varlogaudit
+        sudo umount /dev/rootvg/varlog
+        echo "sudo mount -a" >> /etc/rc.local
+        sudo mkswap /dev/rootvg/swap
+        sudo swapon /dev/rootvg/swap
+
+    - name: "Mouting /tmp file system"
+      mount:
+        src: /dev/rootvg/tmp
+        path: /tmp
+        fstype: xfs
+        opts: auto,nodev,nosuid
+        state: present
+        fstab: /etc/fstab
+
+    - name: "Mouting /home file system"
+      mount:
+        src: /dev/rootvg/home
+        path: /home
+        fstype: xfs
+        opts: auto,nodev
+        state: present
+        fstab: /etc/fstab
+
+    - name: "Mouting /var/log file system"
+      mount:
+        src: /dev/rootvg/varlog
+        path: /var/log
+        fstype: xfs
+        opts: auto,nodev
+        state: present
+        fstab: /etc/fstab
+
+    - name: "Mouting /var file system"
+      mount:
+        src: /dev/rootvg/var
+        path: /var/
+        fstype: xfs
+        opts: auto,nodev
+        state: present
+        fstab: /etc/fstab
+
+
+    - name: "Mouting /var/log/audit file system"
+      mount:
+        src: /dev/rootvg/varlogaudit
+        path: /var/log/audit
+        fstype: xfs
+        state: present
+        fstab: /etc/fstab
+
+    - name: "Binding /var/tmp with /tmp."
+      mount:
+        src: /tmp
+        path: /var/tmp
+        fstype: none
+        opts: "bind"
+        state: present
+        fstab: /etc/fstab
+
+    - name: "Changing mouting option to  /dev/shm file system"
+      mount:
+        fstype: tmpfs
+        name: "/dev/shm"
+        opts: "defaults,nodev,nosuid,noexec"
+        path: /dev/shm
+        src: tmpfs
+        state: mounted
+
+    - name: "Adding SWAP Entry in fstab"
+      lineinfile:
+        path: /etc/fstab
+        state: present
+        line: '/dev/rootvg/swap    swap    swap    defaults   0 0'
+
+
+    - name: "fstab entry"
+      command: sudo cat /etc/fstab
+
