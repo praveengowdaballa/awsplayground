@@ -1,0 +1,41 @@
+#!/bin/bash
+#Author CCoE
+  InstanceID=$( aws ec2 run-instances --image-id ami-03d89680c2d313791 --count 1 --instance-type t2.micro --key-name test-centos --security-group-ids sg-e76ff499 --subnet-id subnet-01c47b5a --region $REGION --output text | grep INSTANCES | cut -f 8)
+        echo "Starting  Instance $InstanceID....."
+        echo "Waiting for Instance $InstanceID  to get ready "
+  aws ec2 wait instance-running --instance-ids $InstanceID --region us-west-2
+        echo "Adding EBS Volume To $InstanceID"
+  AZ=$(aws ec2 describe-instance-status --instance-id $InstanceID --region $REGION | grep AvailabilityZone |awk '{print $2}' | tr -d /\,'"\/')
+  VolumeID=$(aws ec2 create-volume --region $REGION --volume-type gp2 --size 10 --encrypted --kms-key-id d9cfd63a-9c73-4286-b549-967ffce6b220 --availability-zone $AZ | grep -i VolumeID |awk '{print $2}' | tr -d /\,'"\/')
+ aws ec2 wait volume-available --volume-ids $VolumeID --region $REGION
+        echo "Attaching Volume VolumeID to Instance  $InstanceID "
+aws ec2 attach-volume --volume-id $VolumeID --instance-id $InstanceID --device /dev/sdf --region $REGION
+
+#!/bin/bash
+cat > /var/lib/ccoe-admin/lvm.sh <<EOF
+Device=$(lsblk | awk '{print $1}'| tail -1)
+  VG=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 10 ; echo '')
+  LV=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 10 ; echo '')
+        sleep 1
+  pvcreate /dev/$Device
+        sleep 1
+  vgcreate $VG /dev/$Device
+        sleep 1
+  lvcreate -n $LV -l 100%FREE $VG
+        sleep 3
+  mkfs.xfs /dev/$VG/$LV
+        sleep 2
+  mkdir /finalnew
+        sleep 3
+mount /dev/mapper/$VG-$LV /finalnew
+echo -e "/dev/mapper/$VG-$LV\t\t/finalnew\t\txfs\tdefaults\t\t0 0" >> /etc/fstab
+EOF
+
+scp -i ccoe-admin.pem useradd.sh ccoe-admin@10.210.197.48:/tmp
+
+ssh -i ccoe-admin.pem ccoe-admin@10.210.197.48 'sudo mv /tmp/lvm.sh /var/lib/cloud/scripts/per-boot/'
+aws ec2 stop-instances --instance-ids $InstanceID --region us-west-2 --output text 2>/dev/null
+aws ec2 wait instance-stopped --instance-ids $InstanceID --region us-west-2 2>/dev/null
+AMIID=(aws ec2 create-image --instance-id i-093af54e9512bdc1b --name "Myer serve1r" --description "An AMI for my server" --region us-west-2 | grep -i ImageID | awk '{print $2}'| tr -d /\,'"\/' 2>/dev/null )
+echo "AMIs were created:"
+echo "$REGION:$AMIID"
