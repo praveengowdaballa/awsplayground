@@ -1,0 +1,20 @@
+#!/bin/bash
+
+TEST_NAME="CIS-3.5.3"
+TEST_SUMMARY="Ensure RDS is disabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+if modprobe -n rds
+then
+    if modprobe -n -v rds |grep -q '^install /bin/true'
+    then
+        :
+    else
+        logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+    fi
+fi
+

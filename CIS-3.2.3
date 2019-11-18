@@ -1,0 +1,26 @@
+#!/bin/bash
+
+TEST_NAME="CIS-3.2.3"
+TEST_SUMMARY="Ensure secure ICMP redirects are not accepted"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+TEST="`sysctl net.ipv4.conf.all.secure_redirects |tr -d ' '`"
+if [ "$TEST" = "net.ipv4.conf.all.secure_redirects=0" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+
+TEST="`sysctl net.ipv4.conf.default.secure_redirects |tr -d ' '`"
+if [ "$TEST" = "net.ipv4.conf.default.secure_redirects=0" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

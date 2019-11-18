@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-1.1.8"
+TEST_SUMMARY="Ensure nodev option set on /var/tmp partition"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+TEST="`mount | grep -w /var/tmp |grep nodev`"
+if [ -n "$TEST" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

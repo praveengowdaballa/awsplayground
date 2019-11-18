@@ -1,0 +1,26 @@
+#!/bin/bash
+
+TEST_NAME="CIS-4.1.3"
+TEST_SUMMARY="Ensure auditing for processes that start prior to auditd is enabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+FAILED=false
+while read -r line
+do
+    if echo $line | grep -q -v 'audit=1'
+    then
+        echo $line
+        FAILED=true
+    fi
+done < <(grep "^\s*linux" /boot/grub/grub.conf)
+
+
+if [ "$FAILED" = true ]
+then
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

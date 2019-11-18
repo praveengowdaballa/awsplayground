@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.2.10"
+TEST_SUMMARY="Ensure SSH PermitUserEnvironment is disabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+OUT="`grep "PermitUserEnvironment" /etc/ssh/sshd_config |tail -n1`"
+if [ "$OUT" = "PermitUserEnvironment no" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

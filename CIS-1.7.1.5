@@ -1,0 +1,25 @@
+#!/bin/bash
+
+TEST_NAME="CIS-1.7.1.5"
+TEST_SUMMARY="Ensure permissions on /etc/issue are configured"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+if [ ! -e /etc/issue ]
+then
+    exit 0
+fi
+
+STAT="`stat -c"%a %u %g" /etc/issue`"
+read MODE U_ID G_ID <<<$STAT
+echo "file:/etc/issue  mode:$MODE  UID:$U_ID  GID:$G_ID"
+if [ "$MODE" = '644' -a "$U_ID" = '0' -a "$G_ID" = 0 ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

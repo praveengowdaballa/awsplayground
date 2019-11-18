@@ -1,0 +1,20 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.2.1"
+TEST_SUMMARY="Ensure permissions on /etc/ssh/sshd_config are configured"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+STAT="`stat -c"%a %u %g" /etc/ssh/sshd_config`"
+echo $STAT
+read MODE U_ID G_ID <<<$STAT
+if [ \( $MODE = '600' -o $MODE = '640' \) -a $U_ID = '0' -a $G_ID = 0 ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

@@ -1,0 +1,19 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.2.5"
+TEST_SUMMARY="Ensure SSH MaxAuthTries is set to 4 or less"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+OUT="`grep "^MaxAuthTries" /etc/ssh/sshd_config |tail -n1`"
+read OPTION VALUE <<<$OUT
+if [ "$VALUE" -le 4 ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

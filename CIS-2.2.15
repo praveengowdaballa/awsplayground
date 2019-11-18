@@ -1,0 +1,25 @@
+#!/bin/bash
+
+TEST_NAME="CIS-2.2.15"
+TEST_SUMMARY="Ensure mail transfer agent is configured for local-only mode"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+
+FAILED=false
+while read ADDR
+do
+    if [ "$ADDR" != "127.0.0.1:25" ]
+    then
+        FAILED=true
+    fi
+done < <(ss -ln4 | grep LIST | egrep ":25[[:space:]]")
+
+if [ "$FAILED" = "true" ]
+then
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

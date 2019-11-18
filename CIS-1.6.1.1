@@ -1,0 +1,25 @@
+#!/bin/bash
+
+TEST_NAME="CIS-1.6.1.1"
+TEST_SUMMARY="Ensure SELinux is not disabled in bootloader configuration"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+FAILED=false
+while read -r line
+do
+    if echo $line | grep -q 'selinux=0|enforcing=0'
+    then
+        echo $line
+        FAILED=true
+    fi
+done < <(grep "^\s*linux" /boot/grub/grub.conf)
+
+if [ "$FAILED" = true ]
+then
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

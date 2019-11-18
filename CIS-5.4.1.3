@@ -1,0 +1,19 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.4.1.3"
+TEST_SUMMARY="Ensure password expiration warning days is 7 or more"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+OUT="`grep ^PASS_WARN_AGE /etc/login.defs`"
+read OPTION VALUE <<<"$OUT"
+if [ "$VALUE" -ge 7 ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+TEST_NAME="CIS-3.5.4"
+TEST_SUMMARY="Ensure TIPC is disabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+if modprobe -n tipc
+then
+    if modprobe -n -v tipc |grep -q '^install /bin/true'
+    then
+        :
+    else
+        logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+    fi
+fi
+

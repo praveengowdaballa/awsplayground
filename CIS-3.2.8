@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-3.2.8"
+TEST_SUMMARY="Ensure TCP SYN Cookies is enabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+TEST="`sysctl net.ipv4.tcp_syncookies |tr -d ' '`"
+if [ "$TEST" = "net.ipv4.tcp_syncookies=1" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

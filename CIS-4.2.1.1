@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-4.2.1.1"
+TEST_SUMMARY="Ensure rsyslog Service is enabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+/sbin/chkconfig rsyslog
+if [ $? -eq 0 ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

@@ -1,0 +1,32 @@
+#!/bin/bash
+
+TEST_NAME="CIS-2.2.2"
+TEST_SUMMARY="Ensure X Window System is not installed"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+
+INSTALLED=false
+if command -v rpm >/dev/null
+then
+    rpm -qa |grep xorg-x11
+    [ $? -eq 0 ] && INSTALLED=true
+elif command -v dpkg >/dev/null
+then
+    dpkg -l xserver-xorg*
+    [ $? -eq 0 ] && INSTALLED=true
+else
+    :
+fi
+
+
+if [ "$INSTALLED" = false ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

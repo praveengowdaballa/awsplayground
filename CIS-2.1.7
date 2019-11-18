@@ -1,0 +1,42 @@
+#!/bin/bash
+
+TEST_NAME="CIS-2.1.7"
+TEST_SUMMARY="Ensure talk server is not enabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+
+INSTALLED=false
+if command -v rpm >/dev/null
+then
+    rpm -q xinetd >/dev/null 2>&1
+    if [ $? -eq 0 ]
+    then
+        chkconfig --list |egrep 'talk' |grep :on 2>/dev/null
+        [ $? -eq 0 ] && INSTALLED=true
+    fi
+elif command -v dpkg >/dev/null
+then
+    dpkg -l xinetd >/dev/null 2>&1
+    if [ $? -eq 0 ]
+    then
+        egrep -R "talk|ntalk" /etc/inetd.* 2>/dev/null
+        [ $? -eq 0 ] && INSTALLED=true
+        egrep -R "talk" /etc/xinetd.conf /etc/xinetd.d/* 2>/dev/null
+        [ $? -eq 0 ] && INSTALLED=true
+    fi
+else
+    :
+fi
+
+
+if [ "$INSTALLED" = false ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

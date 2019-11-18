@@ -1,0 +1,23 @@
+#!/bin/bash
+
+TEST_NAME="CIS-2.2.11"
+TEST_SUMMARY="Ensure IMAP and POP3 server is not enabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+
+FAILED=false
+for SERVICE in dovecot cyrus-imap cyrus-pop3 exim
+do
+    STATUS="`systemctl is-enabled $SERVICE 2>/dev/null`"
+    [ "$STATUS" = "enabled" ] && FAILED=true
+done
+
+if [ "$FAILED" = "true" ]
+then
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

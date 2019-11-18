@@ -1,0 +1,19 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.1.6"
+TEST_SUMMARY="Ensure permissions on /etc/cron.monthly are configured"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+STAT="`stat -c"%a %u %g" /etc/cron.monthly`"
+read MODE U_ID G_ID <<<$STAT
+if [ $MODE = '700' -a $U_ID = '0' -a $G_ID = 0 ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

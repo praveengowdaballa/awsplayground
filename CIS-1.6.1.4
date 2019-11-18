@@ -1,0 +1,30 @@
+#!/bin/bash
+
+TEST_NAME="CIS-1.6.1.4"
+TEST_SUMMARY="Ensure SETroubleshoot is not installed"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+INSTALLED=false
+if command -v rpm >/dev/null
+then
+    rpm -q setroubleshoot >/dev/null 2>&1
+    [ $? -eq 0 ] && INSTALLED=true
+elif command -v dpkg >/dev/null
+then
+    dpkg -l setroubleshoot >/dev/null 2>&1
+    [ $? -eq 0 ] && INSTALLED=true
+else
+    :
+fi
+
+if [ "$INSTALLED" = false ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+TEST_NAME="CIS-1.1.1.1"
+TEST_SUMMARY="Ensure mounting of cramfs filesystems is disabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+if modprobe -n cramfs
+then
+    if modprobe -n -v cramfs |grep -q '^install /bin/true'
+    then
+        :
+    else
+        logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+    fi
+fi
+

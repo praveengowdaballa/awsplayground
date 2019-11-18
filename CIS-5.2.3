@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.2.3"
+TEST_SUMMARY="Ensure SSH LogLevel is set to INFO"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+OUT="`grep "^LogLevel" /etc/ssh/sshd_config |tail -n1`"
+if [ "$OUT" = "LogLevel INFO" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

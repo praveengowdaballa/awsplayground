@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.2.2"
+TEST_SUMMARY="Ensure SSH Protocol is set to 2"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+OUT="`grep "^Protocol" /etc/ssh/sshd_config |tail -n1`"
+if [ "$OUT" = "Protocol 2" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

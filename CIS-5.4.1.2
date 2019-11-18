@@ -1,0 +1,19 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.4.1.2"
+TEST_SUMMARY="Ensure minimum days between password changes is 7 or more"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+OUT="`grep ^PASS_MIN_DAYS /etc/login.defs`"
+read OPTION VALUE <<<"$OUT"
+if [ "$VALUE" -ge 7 ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

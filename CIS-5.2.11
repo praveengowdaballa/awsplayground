@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.2.11"
+TEST_SUMMARY="Ensure only approved ciphers are used"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+OUT="`awk '/^\s*MACs/ {print $2}' /etc/ssh/sshd_config`"
+if [ "$OUT" = "hmac-sha2-512,hmac-sha2-256" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

@@ -1,0 +1,19 @@
+#!/bin/bash
+
+TEST_NAME="CIS-4.2.1.3"
+TEST_SUMMARY="Ensure rsyslog default file permissions configured"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+OUT="`grep '^$FileCreateMode' /etc/rsyslog.conf`"
+read OPTION VALUE <<<"$OUT"
+if [ "$VALUE" = '0640' -o "$VALUE" = '0600' ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

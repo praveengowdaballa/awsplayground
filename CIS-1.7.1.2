@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-1.7.1.2"
+TEST_SUMMARY="Ensure local login warning banner is configured properly"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+[ -e /etc/issue ] || exit 0
+
+egrep -q '(\\v|\\r|\\m|\\s)' /etc/issue
+if [ $? -eq 0 ]
+then
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

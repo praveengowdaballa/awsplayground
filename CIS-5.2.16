@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.2.16"
+TEST_SUMMARY="Ensure SSH warning banner is configured"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+OUT="`grep "^Banner" /etc/ssh/sshd_config`"
+if [ -n "$OUT" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

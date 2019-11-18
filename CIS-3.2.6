@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-3.2.6"
+TEST_SUMMARY="Ensure bogus ICMP responses are ignored"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+TEST="`sysctl net.ipv4.icmp_ignore_bogus_error_responses |tr -d ' '`"
+if [ "$TEST" = "net.ipv4.icmp_ignore_bogus_error_responses=1" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

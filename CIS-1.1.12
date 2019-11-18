@@ -1,0 +1,17 @@
+#!/bin/bash
+
+TEST_NAME="CIS-1.1.12"
+TEST_SUMMARY="Ensure separate partition exists for /var/log/audit"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+if findmnt /var/log/audit
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

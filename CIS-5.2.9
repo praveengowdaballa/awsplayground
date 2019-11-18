@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.2.9"
+TEST_SUMMARY="Ensure SSH PermitEmptyPasswords is disabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+OUT="`grep "^PermitEmptyPasswords" /etc/ssh/sshd_config |tail -n1`"
+if [ "$OUT" = "PermitEmptyPasswords no" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

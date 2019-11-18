@@ -1,0 +1,28 @@
+#!/bin/bash
+
+TEST_NAME="CIS-3.2.7"
+TEST_SUMMARY="Ensure Reverse Path Filtering is enabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+TEST="`sysctl net.ipv4.conf.all.rp_filter |tr -d ' '`"
+echo $TEST
+if [ "$TEST" = "net.ipv4.conf.all.rp_filter=1" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+
+TEST="`sysctl net.ipv4.conf.default.rp_filter |tr -d ' '`"
+echo $TEST
+if [ "$TEST" = "net.ipv4.conf.default.rp_filter=1" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

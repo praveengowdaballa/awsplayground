@@ -1,0 +1,22 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.1.1"
+TEST_SUMMARY="Ensure cron daemon is enabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+FAILED=true
+for SERVICE in crond cron
+do
+    STATUS="`chkconfig --list |grep $SERVICE |grep :on 2>/dev/null`"
+    [ $? -eq 0 ] && FAILED=false
+done
+
+if [ "$FAILED" = "true" ]
+then
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

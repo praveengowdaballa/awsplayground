@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.2.6"
+TEST_SUMMARY="Ensure SSH IgnoreRhosts is enabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+OUT="`grep "^IgnoreRhosts" /etc/ssh/sshd_config |tail -n1`"
+if [ "$OUT" = "IgnoreRhosts yes" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

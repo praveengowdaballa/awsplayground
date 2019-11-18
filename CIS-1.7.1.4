@@ -1,0 +1,22 @@
+#!/bin/bash
+
+TEST_NAME="CIS-1.7.1.4"
+TEST_SUMMARY="Ensure permissions on /etc/motd are configured"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+[ -e /etc/motd ] || exit 0
+
+STAT="`stat -c"%a %u %g" /etc/motd`"
+read MODE U_ID G_ID <<<$STAT
+echo "file:/etc/motd  mode:$MODE  UID:$U_ID  GID:$G_ID"
+if [ "$MODE" = '644' -a "$U_ID" = '0' -a "$G_ID" = 0 ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

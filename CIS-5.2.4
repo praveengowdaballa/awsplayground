@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.2.4"
+TEST_SUMMARY="Ensure SSH X11 forwarding is disabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+OUT="`grep "^X11Forwarding" /etc/ssh/sshd_config |tail -n1`"
+if [ "$OUT" = "X11Forwarding no" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

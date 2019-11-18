@@ -1,0 +1,19 @@
+#!/bin/bash
+
+TEST_NAME="CIS-2.2.3"
+TEST_SUMMARY="Ensure Avahi Server is not enabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+
+STATUS="`systemctl is-enabled avahi-daemon 2>/dev/null`"
+if [ "$STATUS" != "enabled" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

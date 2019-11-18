@@ -1,0 +1,23 @@
+#!/bin/bash
+
+TEST_NAME="CIS-2.2.9"
+TEST_SUMMARY="Ensure FTP Server is not enabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+
+FAILED=false
+for SERVICE in vsftpd tftp-hpa pure-ftpd pyftpd tftpd
+do
+    STATUS="`systemctl is-enabled $SERVICE 2>/dev/null`"
+    [ "$STATUS" = "enabled" ] && FAILED=true
+done
+
+if [ "$FAILED" = "true" ]
+then
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-1.1.17"
+TEST_SUMMARY="Ensure noexec option set on /dev/shm partition"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+TEST="`mount | grep -w /dev/shm |grep noexec`"
+if [ -n "$TEST" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

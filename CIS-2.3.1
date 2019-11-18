@@ -1,0 +1,30 @@
+#!/bin/bash
+
+TEST_NAME="CIS-2.3.1"
+TEST_SUMMARY="Ensure NIS Client is not installed"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+INSTALLED=false
+if command -v rpm >/dev/null
+then
+    rpm -q ypbind >/dev/null 2>&1
+    [ $? -eq 0 ] && INSTALLED=true
+elif command -v dpkg >/dev/null
+then
+    dpkg -l yp-tools >/dev/null 2>&1
+    [ $? -eq 0 ] && INSTALLED=true
+else
+    :
+fi
+
+if [ "$INSTALLED" = false ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

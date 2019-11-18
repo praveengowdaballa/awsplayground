@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.2.8"
+TEST_SUMMARY="Ensure SSH root login is disabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+OUT="`grep "^PermitRootLogin" /etc/ssh/sshd_config |tail -n1`"
+if [ "$OUT" = "PermitRootLogin no" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

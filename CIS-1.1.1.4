@@ -1,0 +1,20 @@
+#!/bin/bash
+
+TEST_NAME="CIS-1.1.1.4"
+TEST_SUMMARY="Ensure mounting of hfs filesystems is disabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+if modprobe -n hfs
+then
+    if modprobe -n -v hfs |grep -q '^install /bin/true'
+    then
+        :
+    else
+        logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+    fi
+fi
+

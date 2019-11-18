@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TEST_NAME="CIS-3.1.1"
+TEST_SUMMARY="Ensure IP forwarding is disabled"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+TEST="`sysctl net.ipv4.ip_forward |tr -d ' '`"
+if [ "$TEST" = "net.ipv4.ip_forward=0" ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+

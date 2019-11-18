@@ -1,0 +1,19 @@
+#!/bin/bash
+
+TEST_NAME="CIS-5.2.14"
+TEST_SUMMARY="Ensure SSH LoginGraceTime is set to one minute or less"
+TEST_SEVERITY="High"
+
+#--------
+# test scripting
+#--------
+
+OUT="`grep "^LoginGraceTime" /etc/ssh/sshd_config`"
+read OPTION VALUE <<<"$OUT"
+if [ "$VALUE" -le 60 ]
+then
+    :
+else
+    logit2 severity=$TEST_SEVERITY name="$TEST_NAME" summary="$TEST_SUMMARY"
+fi
+
