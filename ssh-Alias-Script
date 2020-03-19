@@ -1,0 +1,9 @@
+#!/bin/bash -x
+#Author Praveen Kumar HA
+#SSH Script for ccoe-admin login to all servers
+# vi ~/.bash_aliases
+# alias connect='bash /home/praveenkumarha/CCoE-Workstation/Playground/.ssh/ccoe-connect.sh'
+#source ~/.bashrc
+#source ~/.bash_aliases
+IP=$1
+ssh -q -o StrictHostKeyChecking=no -i /home/praveenkumarha/CCoE-Workstation/Playground/.ssh/ccoe-admin.pem ccoe-admin@$IP
