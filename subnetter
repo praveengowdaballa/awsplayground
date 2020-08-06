@@ -1,0 +1,122 @@
+#!/bin/bash
+#This automation calculate CIDR subnets with variable cidr subnetting
+#to call automation you run:
+#./vlsm.sh CIDRVPC/CIDRmask /subnet1mask,/subnet2mask,..
+# example:
+#./vlsm.sh 10.209.160.0/21 /24,/24,/25,/25
+# output:
+#["10.209.160.0/24","10.209.161.0/25","10.209.161.128/25","10.209.162.0/28","10.209.162.16/28"]
+#please note that you need always to enter the biggest subnets first
+
+
+
+
+if [ $# == 0 ]; then
+echo "Usage: ./vlsm.sh  IP/SUBNET RANGE mask,mask,mask"
+echo "Masks need to be sorted by number larger numbers first"
+exit
+fi
+
+
+set +x
+MaxValue=255 # highest valid IP octet value
+
+nextip(){
+    #calculate the next ip address in range.
+    IP=$1
+    IP_HEX=$(printf '%.2X%.2X%.2X%.2X\n' `echo $IP | sed -e 's/\./ /g'`)
+    NEXT_IP_HEX=$(printf %.8X `echo $(( 0x$IP_HEX + 1 ))`)
+    NEXT_IP=$(printf '%d.%d.%d.%d\n' `echo $NEXT_IP_HEX | sed -E 's/(..)/0x\1 /g'`)
+    echo "$NEXT_IP"
+}
+
+max_hosts(){
+  #calculate the max number of hosts in a cidr
+  subnet=$1
+  network=$(echo $subnet | cut -d / -f1)
+  hosts=$(sipcalc $1 |  grep -i addresses | cut -d '-' -f2)
+  echo $hosts
+}
+############### Main ######################
+
+#set base vars,
+#base_ip = ip CIDR without mask
+#max_hosts = the maximum number of hosts in the CIDR given.
+
+base_ip=$(echo $1 | cut -d / -f1)
+max_hosts=$(max_hosts $1)
+echo "max_hosts in CIDR:" $max_hosts
+
+#calculate max hosts in all the masks
+#and check if it can fit in main CIDR
+net_size=0
+for masks in ${2//,/ } ; do
+  hosts=$(max_hosts $base_ip$masks)
+  net_size=$(($net_size + $hosts))
+done
+
+if [ $net_size -gt $max_hosts ]; then
+  echo "Base CIDR is too small !!!"
+  echo "max hosts in base CIDR:" $max_hosts
+  echo "you want:" $net_size
+  exit 1
+fi
+
+#create the the ip allocation based on masks from the large CIDR
+subnet_list=()
+
+for masks in ${2//,/ } ; do
+  base_ip=${base_ip}${masks}
+  echo "base:" $base_ip
+  broadcast=$(sipcalc $base_ip | grep -i broadcast | cut -d '-' -f2)
+  gateway=$(sipcalc $base_ip | grep -i usable | awk '{print $4}')
+  hosts=$(sipcalc $base_ip |  grep -i addresses | cut -d '-' -f2)
+  echo "subnet =" $subnet "network =" $network "broadcast =" $broadcast "gateway =" $gateway "hosts =" $hosts
+  NUM=1
+  ip=$broadcast
+  for i in $(seq 1 $NUM); do
+      IP=$(nextip $ip)
+      #echo "Next IP" $IP
+  done
+
+  IP=$(nextip $ip)
+  subnet_list+=('"'${base_ip}'",')
+
+  echo "oldd " $ip
+
+  ip=$(nextip $ip)
+  echo "neww " $ip
+  #subnet_list+=('"'${IP}'",')
+
+
+  firstt=10.200.200.0
+  nextt=$(nextip 10.200.200.0)
+  echo "first is " $firstt
+  echo "next is " $nextt
+  #echo "IP befor is " $IP
+  #IP=$(nextip $ip)
+  #echo "IP after is " $IP
+  #subnet_list+=('"'${base_ip}'",')
+  base_ip=${ip}
+
+done
+
+#Sanitaize the subnet list for Terraform and add to var file
+echo ${subnet_list[@]}
+TF_VAR_subnets=$( echo ${subnet_list[@]} | tr -d ' ' | sed 's/.$//')
+TF_VAR_subnets="\"subnets\":[${TF_VAR_subnets}],"
+
+#insert var to line 29 in var file (Make sure that line is blank)
+ex -s -c "2i|${TF_VAR_subnets}" -c x output.txt
+
+
+
+
+
+
+#Cleanup credentials file
+#sudo cp /home/sparksa/.aws/credentials_bak /home/sparksa/.aws/credentials
+
+
+#Run terraform
+
