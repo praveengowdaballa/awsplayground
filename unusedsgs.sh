@@ -5,9 +5,9 @@
 # requires aws-cli and jq.
 
 # all groups
-aws ec2 describe-security-groups --profile 986148801171 | jq --raw-output '.SecurityGroups[] | [.GroupName, .GroupId] | @tsv' | sort > /tmp/sg.all
+aws ec2 describe-security-groups --profile $AccountID | jq --raw-output '.SecurityGroups[] | [.GroupName, .GroupId] | @tsv' | sort > /tmp/sg.all
 
 # groups in use
-aws ec2 describe-network-interfaces --profile 986148801171 | jq --raw-output '.NetworkInterfaces[].Groups[] | [.GroupName, .GroupId] | @tsv' | sort | uniq > /tmp/sg.in.use
+aws ec2 describe-network-interfaces --profile $AccountID | jq --raw-output '.NetworkInterfaces[].Groups[] | [.GroupName, .GroupId] | @tsv' | sort | uniq > /tmp/sg.in.use
 
 diff /tmp/sg.all /tmp/sg.in.use |grep "<" |cut -d ' ' -f2-3
