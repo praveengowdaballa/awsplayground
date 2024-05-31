@@ -1,0 +1,241 @@
+#!/bin/bash
+
+AccountID="<accountid>"
+regions=$(aws ec2 describe-regions --query "Regions[].RegionName" --output text)
+# Initialize arrays to store data
+declare -a summary_data=()
+declare -a detailed_data=()
+
+# Fetch resources from all regions
+for region in $regions; do
+    # Fetch resource ARNs and process them
+    data=$(aws --region $region resourcegroupstaggingapi get-resources | jq -r '.ResourceTagMappingList[].ResourceARN' | \
+    awk -v region=$region -F '[:/]' '
+        {
+            resourceType = "unknown"
+            if ($3 == "s3") {
+                resourceType = "bucket"
+            } else if ($3 == "sns") {
+                resourceType = "topic"
+            } else {
+                resourceType = $6  
+            }
+
+            # Construct a unique key for each service-resource pair
+            pair = $3 ":" resourceType
+            count[pair]++
+        }
+        END {
+            for (pair in count) {
+                split(pair, s, ":")  # Split the pair back into service and resource
+                service = s[1]
+                resource = s[2]
+                print "{\"service\":\"" service "\", \"resource\":\"" resource "\", \"count\":" count[pair] "}"
+            }
+        }
+    ')
+
+    # Append to summary_data
+    summary_data+=($data)
+
+    # Fetch detailed resource information
+    detailed_info=$(aws resourcegroupstaggingapi get-resources --region $region | jq -r --arg region $region '.ResourceTagMappingList[] | {Resource_Arn: .ResourceARN, Region: ($region // "Global"), Detailed_Service: (.ResourceARN | split(":")[2])}')
+
+    # Append to detailed_data
+    detailed_data+=($detailed_info)
+done
+
+# Process summary data
+summary_json=$(printf "%s\n" "${summary_data[@]}" | jq -s 'group_by(.service, .resource) | map({service: .[0].service, resource: .[0].resource, count: map(.count) | add})')
+total_resources=$(echo "$summary_json" | jq 'map(.count) | add')
+
+# Process detailed data
+detailed_json=$(printf "%s\n" "${detailed_data[@]}" | jq -s .)
+
+# Generate HTML
+cat <<EOF > index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Resources</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        #searchBox, #searchBox2 {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #ddd;
+        }
+        .total-count {
+            font-size: 18px;
+            margin: 20px 0;
+        }
+        #chartContainer {
+            width: 50%;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>AWS Resources for Account ID: $AccountID</h1>
+    <div class="total-count">Total Resources: $total_resources</div>
+    <input type="text" id="searchBox" onkeyup="filterTable()" placeholder="Search for services..">
+    <table id="resourcesTable">
+        <thead>
+            <tr>
+                <th>Service</th>
+                <th>Resource</th>
+                <th>Count</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <h1>Detailed AWS Resources</h1>
+    <input type="text" id="searchBox2" onkeyup="filterTable2()" placeholder="Search for resources..">
+    <table id="detailedResourcesTable">
+        <thead>
+            <tr>
+                <th>Resource ARN</th>
+                <th>Region</th>
+                <th>Detailed Service</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <div id="chartContainer">
+        <canvas id="resourceChart"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const data = $summary_json;
+        const resourceData = $detailed_json;
+
+        function loadTableData(data) {
+            const tableBody = document.getElementById('resourcesTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = "";
+
+            data.forEach(item => {
+                let row = tableBody.insertRow();
+                let cellService = row.insertCell(0);
+                let cellResource = row.insertCell(1);
+                let cellCount = row.insertCell(2);
+
+                cellService.innerHTML = item.service;
+                cellResource.innerHTML = item.resource;
+                cellCount.innerHTML = item.count;
+            });
+
+            updateChart(data);
+        }
+
+        function loadDetailedTableData(resourceData) {
+            const tableBody = document.getElementById('detailedResourcesTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = "";
+
+            resourceData.forEach(item => {
+                let row = tableBody.insertRow();
+                let cellArn = row.insertCell(0);
+                let cellRegion = row.insertCell(1);
+                let cellService = row.insertCell(2);
+
+                cellArn.innerHTML = item.Resource_Arn;
+                cellRegion.innerHTML = item.Region;
+                cellService.innerHTML = item.Detailed_Service;
+            });
+        }
+
+        function filterTable() {
+            const searchValue = document.getElementById('searchBox').value.toLowerCase();
+            const filteredData = data.filter(item => item.service && item.service.toLowerCase().includes(searchValue));
+            loadTableData(filteredData);
+        }
+
+        function filterTable2() {
+            const searchValue = document.getElementById('searchBox2').value.toLowerCase();
+            const filteredResourceData = resourceData.filter(item => 
+                item.Resource_Arn.toLowerCase().includes(searchValue) ||
+                item.Region.toLowerCase().includes(searchValue) ||
+                item.Detailed_Service.toLowerCase().includes(searchValue)
+            );
+            loadDetailedTableData(filteredResourceData);
+        }
+
+        function updateChart(data) {
+            const services = data.reduce((acc, item) => {
+                acc[item.service] = (acc[item.service] || 0) + item.count;
+                return acc;
+            }, {});
+
+            const labels = Object.keys(services);
+            const counts = Object.values(services);
+
+            const ctx = document.getElementById('resourceChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: [
+                            '#FF6384', '#36A2EB', '#FFCE56', '#4CAF50', '#FF9800', '#9C27B0', '#00BCD4'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Resource Distribution by Service'
+                        }
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTableData(data);
+            loadDetailedTableData(resourceData);
+        });
+    </script>
+</body>
+</html>
+EOF
